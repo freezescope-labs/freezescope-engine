@@ -1,0 +1,25 @@
+name: Verify
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: project
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: |
+          for part in engine backend frontend scenarios; do
+            if [ "$part" = "engine" ]; then
+              mv project "freezescope-$part"
+            else
+              git clone --depth 1 "https://github.com/freezescope-labs/freezescope-$part.git"
+            fi
+          done
+          cd freezescope-engine && npm ci && cd ..
+          cd freezescope-backend && npm ci && cd ..
+      - run: node --test freezescope-engine/test.mjs
